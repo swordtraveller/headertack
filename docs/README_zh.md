@@ -1,5 +1,9 @@
 # README
 
+## 图示
+
+<img src="assets/demo.gif" style="width: 60dvw; height: auto;" />
+
 ## 使用说明
 
 |键位|作用|
