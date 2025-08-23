@@ -10,20 +10,25 @@ int main()
     size_t length = 0;
     size_t line_count = 0;
     ssize_t read_bytes;
-    ssize_t lines_bytes = 0;
     char** lines = NULL;
-    while ((read_bytes = getline(&buffer, &length, stdin)) != -1)
-    {
+    while ((read_bytes = getline(&buffer, &length, stdin)) > 0) {
         if (buffer[read_bytes - 1] == '\n') {
             buffer[read_bytes - 1] = '\0';
-            char* line = malloc(sizeof(*line) * read_bytes);
-            // buffer => line
-            line = strdup(buffer);
-            lines_bytes = lines_bytes + read_bytes;
-            lines = realloc(lines, lines_bytes);
-            lines[line_count] = line;
-            line_count++;
         }
+
+        char** new_lines = realloc(lines, (line_count + 1) * sizeof *new_lines);
+        if (new_lines == NULL) {
+            perror("Failed to realloc");
+            exit(EXIT_FAILURE);
+        }
+        lines = new_lines;
+
+        lines[line_count] = strdup(buffer);
+        if (lines[line_count] == NULL) {
+            perror("Failed to strdup");
+            exit(EXIT_FAILURE);
+        }
+        line_count++;
     }
     if (line_count == 0)
     {
