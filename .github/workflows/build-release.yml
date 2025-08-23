@@ -1,0 +1,64 @@
+name: Build and Release (Ubuntu 24.04)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # 允许创建 release
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Run cmake
+      run: |
+        sudo apt update -y
+        sudo apt install -y cmake pkg-config
+        sudo apt install -y libncurses5-dev libncursesw5-dev
+        mkdir build && cd build
+        cmake ..
+        cmake --build .
+        cd ..
+        ls -al build
+
+    - name: Run dpkg
+      run: |
+        mkdir -p cicd/dpkg/opt/headertack/
+        cp build/headertack cicd/dpkg/opt/headertack/headertack
+        chmod 755 cicd/dpkg/opt/headertack/headertack
+        chmod 755 cicd/dpkg/DEBIAN
+        chmod 755 cicd/dpkg/DEBIAN/postinst
+        chmod 755 cicd/dpkg/DEBIAN/prerm
+        sudo apt install -y crudini
+        crudini --set cicd/dpkg/DEBIAN/control '' Version ${GITHUB_REF_NAME#v}
+        dpkg-deb -b cicd/dpkg headertack_${GITHUB_REF_NAME#v}_amd64.deb
+
+    - name: Create tarball
+      run: |
+        tar -C build headertack -czf headertack-amd64-${GITHUB_REF_NAME#v}.tar.gz .
+        ls -al .
+
+    - name: Set Github workflow environment variables
+      id: var
+      run: |
+        echo "version_xyz=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        echo "version_xyz=${GITHUB_REF_NAME#v}"
+
+    - name: Create & Upload Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: v${{ steps.var.outputs.version_xyz }}
+        body: |
+          Auto-generated nightly build for Ubuntu 24.04.
+          Build date: ${{ github.event.head_commit.timestamp }}
+        files: |
+          headertack-amd64-${{ steps.var.outputs.version_xyz }}.tar.gz
+          headertack_${{ steps.var.outputs.version_xyz }}_amd64.deb
+        draft: true
+        prerelease: true

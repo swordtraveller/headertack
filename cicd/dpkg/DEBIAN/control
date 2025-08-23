@@ -1,0 +1,7 @@
+Package: headertack
+Version: x.y.z
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: swordtraveller <swordtraveller7@gmail.com>
+Description: Pin the header row and scroll through the rest.
